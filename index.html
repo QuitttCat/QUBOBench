@@ -308,20 +308,168 @@
       border: 1.5px solid var(--border);
       border-radius: var(--r-sm);
       padding: .95rem 1.1rem;
-      cursor: default;
+      cursor: pointer;
       transition: all .18s;
+      position: relative;
     }
     .problem-card:hover {
-      border-color: var(--primary-light);
+      border-color: var(--primary);
       box-shadow: var(--shadow-md);
       transform: translateY(-2px);
     }
+    .problem-card:hover .problem-name { color: var(--primary); }
     .problem-name {
       font-size: .87rem;
       font-weight: 600;
       color: var(--text);
       margin-bottom: .4rem;
       line-height: 1.3;
+      transition: color .15s;
+    }
+    .card-hint {
+      font-size: .68rem;
+      color: var(--primary);
+      font-weight: 500;
+      margin-top: .5rem;
+      opacity: 0;
+      transition: opacity .15s;
+    }
+    .problem-card:hover .card-hint { opacity: 1; }
+
+    /* ── MODAL ───────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: rgba(15,23,42,.65);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--card);
+      border-radius: var(--r);
+      width: 100%;
+      max-width: 760px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,.4);
+      transform: translateY(12px) scale(.98);
+      transition: transform .22s ease, opacity .22s ease;
+      opacity: 0;
+    }
+    .modal-overlay.open .modal { transform: none; opacity: 1; }
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .modal-title-group { flex: 1; min-width: 0; }
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--dark);
+      letter-spacing: -.02em;
+      line-height: 1.3;
+    }
+    .modal-domain { margin-top: .4rem; }
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      transition: all .15s;
+      font-family: inherit;
+    }
+    .modal-close:hover { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
+    .modal-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      gap: .25rem;
+      flex-shrink: 0;
+    }
+    .modal-tab {
+      padding: .65rem 1rem;
+      font-size: .83rem;
+      font-weight: 600;
+      color: var(--muted);
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-bottom: 2.5px solid transparent;
+      margin-bottom: -1px;
+      transition: all .15s;
+      font-family: inherit;
+    }
+    .modal-tab:hover { color: var(--text); }
+    .modal-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .modal-body {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-pane {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      background: var(--code-bg);
+      padding: 1.5rem;
+    }
+    .modal-pane.active { display: block; }
+    .modal-pane::-webkit-scrollbar { width: 5px; }
+    .modal-pane::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 3px; }
+    .modal-code {
+      font-family: 'JetBrains Mono', 'Fira Mono', monospace;
+      font-size: .79rem;
+      color: #94a3b8;
+      line-height: 1.75;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .modal-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .6rem;
+      color: #475569;
+      font-size: .85rem;
+      padding: 3rem 0;
+    }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(99,102,241,.2);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .modal-error {
+      color: #f87171;
+      font-size: .82rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 2rem 0;
+      text-align: center;
     }
     .domain-tag {
       display: inline-flex;
@@ -748,6 +896,31 @@ quadratic penalty term.</div>
   </div>
 </section>
 
+<!-- ── MODAL ────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-domain" id="modalDomain"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()" title="Close">✕</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="tabPrompt" onclick="switchTab('prompt')">Natural Language Prompt</button>
+      <button class="modal-tab" id="tabCases" onclick="switchTab('cases')">Test Cases</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-pane active" id="panePrompt">
+        <div class="modal-loading"><div class="spinner"></div> Loading…</div>
+      </div>
+      <div class="modal-pane" id="paneCases">
+        <div class="modal-loading"><div class="spinner"></div> Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── FOOTER ───────────────────────────────────────────────────── -->
 <footer>
   <div class="footer-inner">
@@ -785,116 +958,116 @@ quadratic penalty term.</div>
 
   const PROBLEMS = [
     // ── Graph Theory (23) ──────────────────────────────────────
-    { display: 'Max-Cut',                            domain: 'graph'    },
-    { display: 'Max-Clique',                         domain: 'graph'    },
-    { display: 'Maximum Independent Set',            domain: 'graph'    },
-    { display: 'Vertex Cover',                       domain: 'graph'    },
-    { display: 'Graph Coloring',                     domain: 'graph'    },
-    { display: 'Graph Isomorphism',                  domain: 'graph'    },
-    { display: 'Hamiltonian Cycle',                  domain: 'graph'    },
-    { display: 'Hamiltonian Path',                   domain: 'graph'    },
-    { display: 'Graph Bandwidth',                    domain: 'graph'    },
-    { display: 'Community Detection',                domain: 'graph'    },
-    { display: 'Connectome Community Detection',     domain: 'graph'    },
-    { display: 'Dominating Set',                     domain: 'graph'    },
-    { display: 'Densest k-Subgraph',                 domain: 'graph'    },
-    { display: 'Minimum Multicut (Tree)',             domain: 'graph'    },
-    { display: 'Minimum Bisection',                  domain: 'graph'    },
-    { display: 'Social Influence Maximization',      domain: 'graph'    },
-    { display: 'Steiner Tree',                       domain: 'graph'    },
-    { display: 'Feedback Arc Set',                   domain: 'graph'    },
-    { display: 'Feedback Vertex Set',                domain: 'graph'    },
-    { display: 'Clique Cover',                       domain: 'graph'    },
-    { display: 'Core-Periphery Partitioning',        domain: 'graph'    },
-    { display: 'Longest Path',                       domain: 'graph'    },
-    { display: 'Top Eigencentrality Nodes',          domain: 'graph'    },
+    { display: 'Max-Cut',                            domain: 'graph',    folder: 'max_cut'                                      },
+    { display: 'Max-Clique',                         domain: 'graph',    folder: 'max_clique'                                   },
+    { display: 'Maximum Independent Set',            domain: 'graph',    folder: 'maximum_independent_set'                      },
+    { display: 'Vertex Cover',                       domain: 'graph',    folder: 'vertex_cover'                                 },
+    { display: 'Graph Coloring',                     domain: 'graph',    folder: 'graph_coloring'                               },
+    { display: 'Graph Isomorphism',                  domain: 'graph',    folder: 'graph_isomorphism'                            },
+    { display: 'Hamiltonian Cycle',                  domain: 'graph',    folder: 'hamiltonian_cycle'                            },
+    { display: 'Hamiltonian Path',                   domain: 'graph',    folder: 'hamiltonian_path'                             },
+    { display: 'Graph Bandwidth',                    domain: 'graph',    folder: 'graph_bandwidth'                              },
+    { display: 'Community Detection',                domain: 'graph',    folder: 'community_detection'                          },
+    { display: 'Connectome Community Detection',     domain: 'graph',    folder: 'connectome_community_detection'               },
+    { display: 'Dominating Set',                     domain: 'graph',    folder: 'dominating_set'                               },
+    { display: 'Densest k-Subgraph',                 domain: 'graph',    folder: 'densest_k_subgraph'                           },
+    { display: 'Minimum Multicut (Tree)',             domain: 'graph',    folder: 'minimum_multicut_tree'                        },
+    { display: 'Minimum Bisection',                  domain: 'graph',    folder: 'minimum_bisection'                            },
+    { display: 'Social Influence Maximization',      domain: 'graph',    folder: 'social_influence_maximization'                },
+    { display: 'Steiner Tree',                       domain: 'graph',    folder: 'steiner_tree'                                 },
+    { display: 'Feedback Arc Set',                   domain: 'graph',    folder: 'feedback_arc_set'                             },
+    { display: 'Feedback Vertex Set',                domain: 'graph',    folder: 'feedback_vertex_set'                          },
+    { display: 'Clique Cover',                       domain: 'graph',    folder: 'clique_cover'                                 },
+    { display: 'Core-Periphery Partitioning',        domain: 'graph',    folder: 'core_periphery_partitioning'                  },
+    { display: 'Longest Path',                       domain: 'graph',    folder: 'longest_path'                                 },
+    { display: 'Top Eigencentrality Nodes',          domain: 'graph',    folder: 'top_eigencentrality_nodes'                    },
     // ── Combinatorial Optimization (16) ───────────────────────
-    { display: 'Knapsack',                           domain: 'combo'    },
-    { display: 'Travelling Salesman',                domain: 'combo'    },
-    { display: 'Vehicle Routing',                    domain: 'combo'    },
-    { display: 'Bin Packing',                        domain: 'combo'    },
-    { display: 'Set Cover',                          domain: 'combo'    },
-    { display: 'Set Packing',                        domain: 'combo'    },
-    { display: 'Number Partition',                   domain: 'combo'    },
-    { display: 'Exact Cover by 3-Sets',              domain: 'combo'    },
-    { display: 'Subset Sum',                         domain: 'combo'    },
-    { display: 'N-Queens (Exact Cover)',             domain: 'combo'    },
-    { display: 'k-SAT',                              domain: 'combo'    },
-    { display: 'Max 2-SAT',                          domain: 'combo'    },
-    { display: 'Quadratic Assignment',               domain: 'combo'    },
-    { display: 'Generalized Assignment',             domain: 'combo'    },
-    { display: 'FIFO Stack-Up',                      domain: 'combo'    },
-    { display: 'Multi-Vehicle Delivery (iQuHACK)',   domain: 'combo'    },
+    { display: 'Knapsack',                           domain: 'combo',    folder: 'knapsack'                                     },
+    { display: 'Travelling Salesman',                domain: 'combo',    folder: 'travelling_salesman'                          },
+    { display: 'Vehicle Routing',                    domain: 'combo',    folder: 'vehicle_routing'                              },
+    { display: 'Bin Packing',                        domain: 'combo',    folder: 'bin_packing'                                  },
+    { display: 'Set Cover',                          domain: 'combo',    folder: 'set_cover'                                    },
+    { display: 'Set Packing',                        domain: 'combo',    folder: 'set_packing'                                  },
+    { display: 'Number Partition',                   domain: 'combo',    folder: 'number_partition'                             },
+    { display: 'Exact Cover by 3-Sets',              domain: 'combo',    folder: 'exact_cover_by_3_sets'                        },
+    { display: 'Subset Sum',                         domain: 'combo',    folder: 'subset_sum'                                   },
+    { display: 'N-Queens (Exact Cover)',             domain: 'combo',    folder: 'n_queens_exact_cover'                         },
+    { display: 'k-SAT',                              domain: 'combo',    folder: 'k_sat'                                        },
+    { display: 'Max 2-SAT',                          domain: 'combo',    folder: 'max_2_sat'                                    },
+    { display: 'Quadratic Assignment',               domain: 'combo',    folder: 'quadratic_assignment'                         },
+    { display: 'Generalized Assignment',             domain: 'combo',    folder: 'generalized_assignment'                       },
+    { display: 'FIFO Stack-Up',                      domain: 'combo',    folder: 'fifo_stack_up'                                },
+    { display: 'Multi-Vehicle Delivery (iQuHACK)',   domain: 'combo',    folder: 'iquhack_multi_vehicle_delivery'               },
     // ── Scheduling & Planning (13) ────────────────────────────
-    { display: 'Nurse Scheduling',                   domain: 'sched'    },
-    { display: 'Job Shop Scheduling',                domain: 'sched'    },
-    { display: 'Railway Dispatching',                domain: 'sched'    },
-    { display: 'Energy Storage Scheduling',          domain: 'sched'    },
-    { display: 'Unit Commitment',                    domain: 'sched'    },
-    { display: 'Traffic Route Assignment',           domain: 'sched'    },
-    { display: 'Supply Chain Allocation',            domain: 'sched'    },
-    { display: 'Exam Timetabling',                   domain: 'sched'    },
-    { display: 'Hospital Staff Rescheduling',        domain: 'sched'    },
-    { display: 'OS Task Scheduling',                 domain: 'sched'    },
-    { display: 'Mars Satellite Scheduling',          domain: 'sched'    },
-    { display: 'Job Selection (AMPLIFY)',             domain: 'sched'    },
-    { display: 'Resource-Constrained Proj. Sched.',  domain: 'sched'    },
+    { display: 'Nurse Scheduling',                   domain: 'sched',    folder: 'nurse_scheduling'                             },
+    { display: 'Job Shop Scheduling',                domain: 'sched',    folder: 'job_shop_scheduling'                          },
+    { display: 'Railway Dispatching',                domain: 'sched',    folder: 'railway_dispatching'                          },
+    { display: 'Energy Storage Scheduling',          domain: 'sched',    folder: 'energy_storage_scheduling'                    },
+    { display: 'Unit Commitment',                    domain: 'sched',    folder: 'unit_commitment'                              },
+    { display: 'Traffic Route Assignment',           domain: 'sched',    folder: 'traffic_route_assignment'                     },
+    { display: 'Supply Chain Allocation',            domain: 'sched',    folder: 'supply_chain_allocation'                      },
+    { display: 'Exam Timetabling',                   domain: 'sched',    folder: 'exam_timetabling_quantum'                     },
+    { display: 'Hospital Staff Rescheduling',        domain: 'sched',    folder: 'hospital_staff_rescheduling'                  },
+    { display: 'OS Task Scheduling',                 domain: 'sched',    folder: 'operating_system_task_scheduling'             },
+    { display: 'Mars Satellite Scheduling',          domain: 'sched',    folder: 'mars_satellite_observation_scheduling'        },
+    { display: 'Job Selection (AMPLIFY)',             domain: 'sched',    folder: 'amplify_benchmark_job_selection'              },
+    { display: 'Resource-Constrained Proj. Sched.',  domain: 'sched',    folder: 'resource_constrained_project_scheduling'      },
     // ── Quantum Computing (5) ─────────────────────────────────
-    { display: 'Qubit Allocation',                   domain: 'quantum'  },
-    { display: 'Quantum Circuit Routing',            domain: 'quantum'  },
-    { display: 'Quantum Circuit Compilation',        domain: 'quantum'  },
-    { display: 'Electronic Structure Eigensolver',   domain: 'quantum'  },
-    { display: 'Trapped-Ion Portfolio Decomp. (IonQ)',domain:'quantum'  },
+    { display: 'Qubit Allocation',                   domain: 'quantum',  folder: 'qubit_allocation'                             },
+    { display: 'Quantum Circuit Routing',            domain: 'quantum',  folder: 'quantum_circuit_routing'                      },
+    { display: 'Quantum Circuit Compilation',        domain: 'quantum',  folder: 'quantum_circuit_compilation'                  },
+    { display: 'Electronic Structure Eigensolver',   domain: 'quantum',  folder: 'electronic_structure_eigensolver'             },
+    { display: 'Trapped-Ion Portfolio Decomp. (IonQ)',domain:'quantum',  folder: 'ionq_trapped_ion_portfolio_decomposition'     },
     // ── Bioinformatics & Chemistry (8) ────────────────────────
-    { display: 'RNA Folding',                        domain: 'bio'      },
-    { display: 'Genome Assembly',                    domain: 'bio'      },
-    { display: 'Protein Lattice Folding',            domain: 'bio'      },
-    { display: 'Fragment Flexible Docking',          domain: 'bio'      },
-    { display: 'Ligand Pose Hotspot Sampling',       domain: 'bio'      },
-    { display: 'Molecular Conformation Selection',   domain: 'bio'      },
-    { display: 'Alkane Isomer Search',               domain: 'bio'      },
-    { display: 'Clinical Enzyme Target ID',          domain: 'bio'      },
+    { display: 'RNA Folding',                        domain: 'bio',      folder: 'rna_folding'                                  },
+    { display: 'Genome Assembly',                    domain: 'bio',      folder: 'genome_assembly'                              },
+    { display: 'Protein Lattice Folding',            domain: 'bio',      folder: 'protein_lattice_folding'                      },
+    { display: 'Fragment Flexible Docking',          domain: 'bio',      folder: 'fragment_flexible_docking'                    },
+    { display: 'Ligand Pose Hotspot Sampling',       domain: 'bio',      folder: 'ligand_pose_hotspot_sampling'                 },
+    { display: 'Molecular Conformation Selection',   domain: 'bio',      folder: 'molecular_conformation_selection'             },
+    { display: 'Alkane Isomer Search',               domain: 'bio',      folder: 'alkane_isomer_search'                         },
+    { display: 'Clinical Enzyme Target ID',          domain: 'bio',      folder: 'clinical_enzyme_target_identification'        },
     // ── Machine Learning & AI (12) ────────────────────────────
-    { display: 'Feature Selection',                  domain: 'ml'       },
-    { display: 'Balanced k-Means Clustering',        domain: 'ml'       },
-    { display: 'k-Medoids Clustering',               domain: 'ml'       },
-    { display: 'SVM Training',                       domain: 'ml'       },
-    { display: 'Recommender Feature Selection',      domain: 'ml'       },
-    { display: 'Intrusion Detection Feature Sel.',   domain: 'ml'       },
-    { display: 'Fraud Detection Feature Selection',  domain: 'ml'       },
-    { display: 'Credit Scorecard Selection',         domain: 'ml'       },
-    { display: 'Brain Sparse Coding',                domain: 'ml'       },
-    { display: 'Legal Document Summarization',       domain: 'ml'       },
-    { display: 'LLM Cascade Routing',               domain: 'ml'       },
-    { display: 'Bayesian Network Learning',          domain: 'ml'       },
+    { display: 'Feature Selection',                  domain: 'ml',       folder: 'feature_selection'                            },
+    { display: 'Balanced k-Means Clustering',        domain: 'ml',       folder: 'balanced_k_means_clustering'                  },
+    { display: 'k-Medoids Clustering',               domain: 'ml',       folder: 'k_medoids_clustering'                         },
+    { display: 'SVM Training',                       domain: 'ml',       folder: 'support_vector_machine_training'              },
+    { display: 'Recommender Feature Selection',      domain: 'ml',       folder: 'recommender_feature_selection'                },
+    { display: 'Intrusion Detection Feature Sel.',   domain: 'ml',       folder: 'cybersecurity_intrusion_feature_selection'    },
+    { display: 'Fraud Detection Feature Selection',  domain: 'ml',       folder: 'finance_fraud_feature_selection'              },
+    { display: 'Credit Scorecard Selection',         domain: 'ml',       folder: 'credit_scorecard_selection'                   },
+    { display: 'Brain Sparse Coding',                domain: 'ml',       folder: 'brain_sparse_coding_qubo'                     },
+    { display: 'Legal Document Summarization',       domain: 'ml',       folder: 'legal_document_summarization'                 },
+    { display: 'LLM Cascade Routing',               domain: 'ml',        folder: 'llm_cascade_routing'                          },
+    { display: 'Bayesian Network Learning',          domain: 'ml',       folder: 'bayesian_network_learning'                    },
     // ── Computer Vision (5) ───────────────────────────────────
-    { display: 'Image Denoising',                    domain: 'vision'   },
-    { display: 'Image Segmentation (Graph Cut)',     domain: 'vision'   },
-    { display: 'Stereo Matching',                    domain: 'vision'   },
-    { display: 'Remote Sensing Segmentation (QSEG)',  domain: 'vision'  },
-    { display: 'Phase Field Correction',             domain: 'vision'   },
+    { display: 'Image Denoising',                    domain: 'vision',   folder: 'image_denoising'                              },
+    { display: 'Image Segmentation (Graph Cut)',     domain: 'vision',   folder: 'image_segmentation_graph_cut'                 },
+    { display: 'Stereo Matching',                    domain: 'vision',   folder: 'stereo_matching'                              },
+    { display: 'Remote Sensing Segmentation (QSEG)', domain: 'vision',   folder: 'qseg_remote_sensing_segmentation'             },
+    { display: 'Phase Field Correction',             domain: 'vision',   folder: 'phase_field_correction'                       },
     // ── Finance & Economics (3) ───────────────────────────────
-    { display: 'Portfolio Optimization',             domain: 'finance'  },
-    { display: 'Asset Exchange (QUBO+)',             domain: 'finance'  },
-    { display: 'Combinatorial Auction Winner Det.',  domain: 'finance'  },
+    { display: 'Portfolio Optimization',             domain: 'finance',  folder: 'portfolio_optimization'                       },
+    { display: 'Asset Exchange (QUBO+)',             domain: 'finance',  folder: 'asset_exchange_qubo_plus'                     },
+    { display: 'Combinatorial Auction Winner Det.',  domain: 'finance',  folder: 'combinatorial_auction_winner_determination'   },
     // ── Networking & Systems (8) ──────────────────────────────
-    { display: 'Facility Location',                  domain: 'network'  },
-    { display: 'Capacitated Facility Location',      domain: 'network'  },
-    { display: 'Cloud-Edge Resource Allocation',     domain: 'network'  },
-    { display: 'IoT MEC Server Selection',           domain: 'network'  },
-    { display: 'Dynamic Spectrum Allocation',        domain: 'network'  },
-    { display: 'Microgrid Siting (Aqora)',           domain: 'network'  },
-    { display: 'Distribution Network Reconfig.',     domain: 'network'  },
-    { display: 'Database Serializability Verif.',    domain: 'network'  },
+    { display: 'Facility Location',                  domain: 'network',  folder: 'facility_location'                            },
+    { display: 'Capacitated Facility Location',      domain: 'network',  folder: 'capacitated_facility_location'                },
+    { display: 'Cloud-Edge Resource Allocation',     domain: 'network',  folder: 'cloud_edge_resource_allocation'               },
+    { display: 'IoT MEC Server Selection',           domain: 'network',  folder: 'iot_mec_aigc_server_selection'                },
+    { display: 'Dynamic Spectrum Allocation',        domain: 'network',  folder: 'dynamic_spectrum_allocation'                  },
+    { display: 'Microgrid Siting (Aqora)',           domain: 'network',  folder: 'aqora_energy_storage_microgrid_siting'        },
+    { display: 'Distribution Network Reconfig.',     domain: 'network',  folder: 'distribution_network_reconfiguration'         },
+    { display: 'Database Serializability Verif.',    domain: 'network',  folder: 'database_serializability_verification'        },
     // ── Engineering & Robotics (4) ────────────────────────────
-    { display: 'Robot Arm Path Planning',            domain: 'eng'      },
-    { display: 'Inverse Kinematics',                 domain: 'eng'      },
-    { display: 'FPGA Placement',                     domain: 'eng'      },
-    { display: 'VLSI Bisection Placement',           domain: 'eng'      },
+    { display: 'Robot Arm Path Planning',            domain: 'eng',      folder: 'robot_arm_path_planning'                      },
+    { display: 'Inverse Kinematics',                 domain: 'eng',      folder: 'inverse_kinematics'                           },
+    { display: 'FPGA Placement',                     domain: 'eng',      folder: 'fpga_placement'                               },
+    { display: 'VLSI Bisection Placement',           domain: 'eng',      folder: 'vlsi_bisection_placement'                     },
     // ── Security (3) ──────────────────────────────────────────
-    { display: 'Cyber Risk Scoring',                 domain: 'security' },
-    { display: 'Prime Factorization (Cryptanalysis)',domain: 'security' },
-    { display: 'Sensor Placement (Mutual Info.)',    domain: 'security' },
+    { display: 'Cyber Risk Scoring',                 domain: 'security', folder: 'cyber_risk_scoring_qubo'                      },
+    { display: 'Prime Factorization (Cryptanalysis)',domain: 'security', folder: 'cryptanalysis_prime_factorization'            },
+    { display: 'Sensor Placement (Mutual Info.)',    domain: 'security', folder: 'sensor_placement_mutual_information'          },
   ];
 
   /* ── Build tabs ── */
@@ -919,12 +1092,12 @@ quadratic penalty term.</div>
   });
 
   /* ── Render problem cards ── */
-  const gridEl    = document.getElementById('problemGrid');
-  const countEl   = document.getElementById('filterCount');
+  const gridEl  = document.getElementById('problemGrid');
+  const countEl = document.getElementById('filterCount');
 
   function renderProblems(filter) {
     const list = filter === 'all' ? PROBLEMS : PROBLEMS.filter(p => p.domain === filter);
-    countEl.textContent = `Showing ${list.length} problem${list.length !== 1 ? 's' : ''}`;
+    countEl.textContent = `Showing ${list.length} problem${list.length !== 1 ? 's' : ''} — click any card to view prompt & test cases`;
     gridEl.innerHTML = '';
     list.forEach(p => {
       const meta = DOMAIN_META[p.domain];
@@ -933,12 +1106,65 @@ quadratic penalty term.</div>
       card.innerHTML = `
         <div class="problem-name">${p.display}</div>
         <span class="domain-tag d-${p.domain}">${meta.label}</span>
+        <div class="card-hint">↗ View prompt &amp; test cases</div>
       `;
+      card.addEventListener('click', () => openProblem(p));
       gridEl.appendChild(card);
     });
   }
 
   renderProblems('all');
+
+  /* ── Modal ── */
+  const RAW = 'https://raw.githubusercontent.com/QuitttCat/QUBOBench/main/QUBOBench';
+  const overlay    = document.getElementById('modalOverlay');
+  const panePrompt = document.getElementById('panePrompt');
+  const paneCases  = document.getElementById('paneCases');
+  const LOADING    = '<div class="modal-loading"><div class="spinner"></div> Loading…</div>';
+
+  function openProblem(p) {
+    document.getElementById('modalTitle').textContent  = p.display;
+    const meta = DOMAIN_META[p.domain];
+    document.getElementById('modalDomain').innerHTML =
+      `<span class="domain-tag d-${p.domain}">${meta.label}</span>`;
+    panePrompt.innerHTML = LOADING;
+    paneCases.innerHTML  = LOADING;
+    switchTab('prompt');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    fetch(`${RAW}/${p.folder}/prompt.txt`)
+      .then(r => r.ok ? r.text() : Promise.reject(r.status))
+      .then(t => { panePrompt.innerHTML = `<pre class="modal-code">${escHtml(t)}</pre>`; })
+      .catch(e => { panePrompt.innerHTML = `<div class="modal-error">Could not load prompt.txt (${e})</div>`; });
+
+    fetch(`${RAW}/${p.folder}/sample_cases.txt`)
+      .then(r => r.ok ? r.text() : Promise.reject(r.status))
+      .then(t => { paneCases.innerHTML = `<pre class="modal-code">${escHtml(t)}</pre>`; })
+      .catch(() => { paneCases.innerHTML = `<div class="modal-error">No test cases file for this problem.</div>`; });
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function closeModal() {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === overlay) closeModal();
+  }
+
+  function switchTab(which) {
+    document.getElementById('tabPrompt').classList.toggle('active', which === 'prompt');
+    document.getElementById('tabCases').classList.toggle('active',  which === 'cases');
+    panePrompt.classList.toggle('active', which === 'prompt');
+    paneCases.classList.toggle('active',  which === 'cases');
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
   /* ── Copy citation ── */
   function copyCitation() {
