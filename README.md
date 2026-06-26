@@ -1,7 +1,7 @@
 
 # QUBOBench
 
-[![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![ICML 2026 Workshop](https://img.shields.io/badge/ICML%202026-Workshop-blue)](https://openreview.net/forum?id=9YTedapat4)
 [![Website](https://img.shields.io/badge/Website-QUBOBench-indigo)](https://quitttcat.github.io/QUBOBench)
 
@@ -207,4 +207,4 @@ If you use QUBOBench in your research, please cite:
 
 ## License
 
-This dataset is released under the [Creative Commons Attribution 4.0 International License (CC BY 4.0)](LICENSE). You are free to use, share, and adapt the material for any purpose, provided appropriate credit is given.
+This project is released under the [MIT License](LICENSE).
